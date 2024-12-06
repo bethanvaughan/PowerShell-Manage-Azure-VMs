@@ -1,1 +1,72 @@
+function Start-AzureVM {
+    param (
+        [string]$ResourceGroupName,
+        [string]$VMName
+    )
+
+    $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status
+    if ($vm.Statuses[1].Code -eq 'PowerState/running') {
+        Write-Host "The VM '$VMName' is already running." -ForegroundColor Yellow
+    } else {
+        Write-Host "Starting VM '$VMName'..." -ForegroundColor Green
+        Start-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -NoWait
+        Write-Host "VM '$VMName' has been started." -ForegroundColor Green
+    }
+}
+
+function Stop-AzureVM {
+    param (
+        [string]$ResourceGroupName,
+        [string]$VMName
+    )
+
+    $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status
+    if ($vm.Statuses[1].Code -eq 'PowerState/deallocated') {
+        Write-Host "The VM '$VMName' is already stopped." -ForegroundColor Yellow
+    } else {
+        Write-Host "Stopping VM '$VMName'..." -ForegroundColor Red
+        Stop-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Force -NoWait
+        Write-Host "VM '$VMName' has been stopped." -ForegroundColor Red
+    }
+}
+
+function Restart-AzureVM {
+    param (
+        [string]$ResourceGroupName,
+        [string]$VMName
+    )
+
+    $vm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Status
+    if ($vm.Statuses[1].Code -ne 'PowerState/running') {
+        Write-Host "The VM '$VMName' is not running. Starting it first..." -ForegroundColor Yellow
+        Start-AzureVM -ResourceGroupName $ResourceGroupName -VMName $VMName
+    }
+    Write-Host "Restarting VM '$VMName'..." -ForegroundColor Cyan
+    Restart-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName -Force -NoWait
+    Write-Host "VM '$VMName' has been restarted." -ForegroundColor Cyan
+}
+
+function Manage-AzureVM {
+    $resourceGroupName = Read-Host -Prompt "Enter the Resource Group Name"
+    $vmName = Read-Host -Prompt "Enter the Virtual Machine Name"
+
+    Write-Host "Choose an action:" -ForegroundColor Magenta
+    Write-Host "1. Start VM" -ForegroundColor Green
+    Write-Host "2. Stop VM" -ForegroundColor Red
+    Write-Host "3. Restart VM" -ForegroundColor Cyan
+    Write-Host "4. Exit" -ForegroundColor Yellow
+
+    $choice = Read-Host -Prompt "Enter your choice (1-4)"
+
+    switch ($choice) {
+        '1' { Start-AzureVM -ResourceGroupName $resourceGroupName -VMName $vmName }
+        '2' { Stop-AzureVM -ResourceGroupName $resourceGroupName -VMName $vmName }
+        '3' { Restart-AzureVM -ResourceGroupName $resourceGroupName -VMName $vmName }
+        '4' { Write-Host "Exiting..." -ForegroundColor Yellow; return }
+        default { Write-Host "Invalid choice. Please try again." -ForegroundColor Red }
+    }
+}
+
+# Run the script
+Manage-AzureVM
 
